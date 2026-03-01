@@ -1,4 +1,4 @@
-# year-12-second-term-project
+# Year 12 HSC Project
 ## Description
 This is an interactive CLI (Command Line Interface) tool for generating [visual noise](https://w.wiki/HpbU). 
 It can generate 3 types of noise:
