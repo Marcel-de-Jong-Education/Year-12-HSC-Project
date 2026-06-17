@@ -3,14 +3,13 @@
 # ----------------Dependencies---------------- #
 
 import sys
-import random as r
+from random import randint
 from enum import StrEnum
 
 import inquirer
 from time import time
 from PIL import Image
 from math import log
-from AES_Python import AES # https://pypi.org/project/AES-Python/
 from numpy import (
     array,
     zeros,
@@ -21,7 +20,6 @@ from numpy import (
 
 # ----------------Definitions---------------- #
 
-encryption_manager = AES(r_mode="ECB", key="my-encryption-key")
 
 class Noise(StrEnum): # Not a typical python class, enums are special
     """Enumerates noise types to ensure type-safety."""
@@ -32,7 +30,7 @@ class Noise(StrEnum): # Not a typical python class, enums are special
 
 
 
-def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: # total is just for UX and technically unnecessary. Total should always == repetitions except in recursions.
+def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: # Total is just for UX and technically unnecessary. Total should always == repetitions except in recursions.
     """A recursive blurring function that averages a 3x3 kernel around each point."""
     # Border pixels have seperate handling!
     # This is more optimised than try;catch, though significantly more tedious
@@ -54,7 +52,7 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
     # x x x
     # x x x
     for x in range(len(value_matrix[0])-2): # skip the first and stop before the last, hence -2
-            t = x+1 # skips the first
+            t = x+1 # skips the first [FIXME]
             value = int(value_matrix[0][t]) # centre
             value += value_matrix[0][t-1] # left
             value += value_matrix[1][t] # down
@@ -67,12 +65,11 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
     # - - -
     # x x -
     # x x -
-    end = len(value_matrix[0])-1 # for readability
 
-    value = int(value_matrix[0][end]) # centre
-    value += value_matrix[1][end] # down
-    value += value_matrix[0][end-1] # left
-    value += value_matrix[1][end-1] # down-left
+    value = int(value_matrix[0][-1]) # centre
+    value += value_matrix[1][-1] # down
+    value += value_matrix[0][-2] # left
+    value += value_matrix[1][-2] # down-left
     value /= 4
     row.append(value)
 
@@ -91,12 +88,13 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
         value += value_matrix[y+1][0] # down
         value += value_matrix[y][1] # right
         value += value_matrix[y-1][1] # up-right
-        value += value_matrix[y-1][1] # down-right
+        value += value_matrix[y+1][1] # down-right
         value /= 6
 
         line.append(value)
 
-        for x in range(len(value_matrix[y])):
+        # Loop beginning from proceeding right border (index 1); end preceeding left border
+        for x in range(1, len(value_matrix[y]) - 1):
             # handle non-border
             # x x x
             # x x x
@@ -110,43 +108,43 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
             try:
                 value += value_matrix[y][x-1] # left
                 count += 1
-            except:
+            except IndexError:
                 pass
 
             try:
                 value += value_matrix[y+1][x] # down
                 count += 1
-            except:
+            except IndexError:
                 pass
 
             try:
                 value += value_matrix[y][x+1] # right
                 count += 1
-            except:
+            except IndexError:
                 pass
 
             try:
                 value += value_matrix[y-1][x-1] # up-left
                 count += 1
-            except:
+            except IndexError:
                 pass
 
             try:
                 value += value_matrix[y+1][x-1] # down-left
                 count += 1
-            except:
+            except IndexError:
                 pass
 
             try:
                 value += value_matrix[y+1][x+1] # down-right
                 count += 1
-            except:
+            except IndexError:
                 pass
 
             try:
                 value += value_matrix[y-1][x+1] # up-right
                 count += 1
-            except:
+            except IndexError:
                 pass
 
             value /= count
@@ -157,12 +155,12 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
         # x x -
         # x x -
         # x x -
-        value = int(value_matrix[y][0]) # centre
-        value += value_matrix[y-1][0] # up
-        value += value_matrix[y+1][0] # down
-        value += value_matrix[y][1] # right
-        value += value_matrix[y-1][1] # up-right
-        value += value_matrix[y-1][1] # down-right
+        value = int(value_matrix[y][-1]) # centre
+        value += value_matrix[y-1][-1] # up
+        value += value_matrix[y+1][-1] # down
+        value += value_matrix[y][-2] # left
+        value += value_matrix[y-1][-2] # up-left
+        value += value_matrix[y-1][-2] # down-left
         value /= 6
 
         line.append(value)
@@ -225,7 +223,7 @@ def generate_noise(width: int, height: int, noise_type: StrEnum = Noise.WHITE, d
                 line = []
 
                 for x in range(width):
-                    line.append(r.randint(0x00, 0xFF))
+                    line.append(randint(0x00, 0xFF))
 
                 matrix.append(line)
 
@@ -241,7 +239,7 @@ def generate_noise(width: int, height: int, noise_type: StrEnum = Noise.WHITE, d
                 line = []
 
                 for x in range(width):
-                    if float(r.randint(1,100000))/1000 <= density_percent:
+                    if float(randint(1,100000))/1000 <= density_percent:
                         line.append(0xFF)
                         origins.append([x,y])
                     else:
@@ -430,7 +428,7 @@ def main() -> int:
             #noise_map = noise_octaves(noise_map, [32.0, 1.2])
 
             if 'y' in input('Colourise to terrain? [y/N]\n').lower():
-                terrain = noise_to_terrain(noise_matrix=noise_map, sea_level=24) # sea_level is from 0->255
+                terrain = noise_to_terrain(noise_matrix=noise_map, sea_level=24) # 0 <= sea_level <= 255
                 img = Image.fromarray(terrain, mode="RGB")
             else:
                 noise_map = array(noise_map, dtype=uint8)
