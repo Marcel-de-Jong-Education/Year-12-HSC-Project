@@ -13,8 +13,6 @@ from math import log
 from numpy import (
     array,
     zeros,
-    zeros_like,
-    stack,
     uint8
     )
 
@@ -175,7 +173,7 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
     row.append(value)
 
     blur.append(row)
-    # Recursion
+    # Recursion logic
     if repetitions <= 1:
         return blur
     else:
@@ -208,7 +206,6 @@ def generate_noise(width: int, height: int, noise_type: StrEnum = Noise.WHITE, d
 
                 matrix.append(line)
 
-            matrix = box_blur(matrix, 64, 64)
             return matrix
 
 
@@ -232,7 +229,7 @@ def generate_noise(width: int, height: int, noise_type: StrEnum = Noise.WHITE, d
 
             for i in range(spread_distance):
                 current_origins = list(origins) # Avoid TOCTOU
-                origins = [] # prevent re-running on old points, massive optimisation
+                origins = [] # prevent re-running on old points; massive optimisation
                 for point in current_origins:
                     try:
                         matrix[point[1]-1][point[0]] = 0xFF # up
@@ -275,7 +272,7 @@ def generate_noise(width: int, height: int, noise_type: StrEnum = Noise.WHITE, d
 
 
 
-def noise_octaves(noise: list, octaves: list = [8.0], strength: float = [1]) -> list: # TODO: fix
+def noise_octaves(noise: list, octaves: list[float] = [8.0], strength: list[float] = [1.0]) -> list: # TODO: fix
     """Adds octaves to noise."""
 
     # octaves should be number loosely based on what grid size they would standalone suit
@@ -292,9 +289,9 @@ def noise_octaves(noise: list, octaves: list = [8.0], strength: float = [1]) -> 
         img = Image.fromarray(noise)
         img.show()
 
-        noise = noise + array(generate_noise(
-            len(noise), # width
-            len(noise[0]), # height
+        noise = noise + array(generate_noise( # numpy wraps when values exceed 255 so need to handle that at some point
+            width=len(noise[0]), # width
+            height=len(noise), # height
             noise_type=Noise.BLOBBY,
             density_percent=density,
             spread_distance=spread
@@ -439,5 +436,5 @@ def main() -> int:
 if __name__ == "__main__":
     sys.exit(main())
 
-
-# benchmark: 11.52"
+# Settings: Blobby, 256x256
+# benchmark: 9201 ms
