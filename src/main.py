@@ -51,16 +51,16 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
     # - - -
     # x x x
     # x x x
-    for x in range(len(value_matrix[0])-2): # skip the first and stop before the last, hence -2
-            t = x+1 # skips the first [FIXME]
-            value = int(value_matrix[0][t]) # centre
-            value += value_matrix[0][t-1] # left
-            value += value_matrix[1][t] # down
-            value += value_matrix[0][t+1] # right
-            value += value_matrix[1][t-1] # down-left
-            value += value_matrix[1][t+1] # down-right
+    for x in range(1, len(value_matrix[0])-1): # skip the first and stop before the last, hence -1
+            value = int(value_matrix[0][x]) # centre
+            value += value_matrix[0][x-1] # left
+            value += value_matrix[1][x] # down
+            value += value_matrix[0][x+1] # right
+            value += value_matrix[1][x-1] # down-left
+            value += value_matrix[1][x+1] # down-right
             value /= 6
             row.append(value)
+
     # handle top-right corner
     # - - -
     # x x -
@@ -75,8 +75,7 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
 
     blur.append(row)
 
-    for y in range(len(value_matrix)-2): # subtract 2, because seperate handling for first and final rows
-        y += 1 # reference is shifted by 1, this is undone at the end
+    for y in range(1, len(value_matrix)-1): # subtract 1, because seperate handling for first and final rows
         line = []
 
         # handle left border pixel
@@ -99,55 +98,26 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
             # x x x
             # x x x
             # x x x
-            count = 1
             value = int(value_matrix[y][x]) # centre
 
             value += value_matrix[y-1][x] # up
-            count += 1
 
-            try:
-                value += value_matrix[y][x-1] # left
-                count += 1
-            except IndexError:
-                pass
+            value += value_matrix[y][x-1] # left
 
-            try:
-                value += value_matrix[y+1][x] # down
-                count += 1
-            except IndexError:
-                pass
+            value += value_matrix[y+1][x] # down
 
-            try:
-                value += value_matrix[y][x+1] # right
-                count += 1
-            except IndexError:
-                pass
+            value += value_matrix[y][x+1] # right
 
-            try:
-                value += value_matrix[y-1][x-1] # up-left
-                count += 1
-            except IndexError:
-                pass
+            value += value_matrix[y-1][x-1] # up-left
 
-            try:
-                value += value_matrix[y+1][x-1] # down-left
-                count += 1
-            except IndexError:
-                pass
+            value += value_matrix[y+1][x-1] # down-left
 
-            try:
-                value += value_matrix[y+1][x+1] # down-right
-                count += 1
-            except IndexError:
-                pass
+            value += value_matrix[y+1][x+1] # down-right
 
-            try:
-                value += value_matrix[y-1][x+1] # up-right
-                count += 1
-            except IndexError:
-                pass
+            value += value_matrix[y-1][x+1] # up-right
 
-            value /= count
+
+            value /= 9
 
             line.append(value)
 
@@ -160,14 +130,52 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
         value += value_matrix[y+1][-1] # down
         value += value_matrix[y][-2] # left
         value += value_matrix[y-1][-2] # up-left
-        value += value_matrix[y-1][-2] # down-left
+        value += value_matrix[y+1][-2] # down-left
         value /= 6
 
         line.append(value)
 
-        blur.append(line)
-        y -= 1 # correct reference back
+        blur.append(line) # end of loop
 
+    row = []
+    # Handle bottom-left corner
+    # - x x
+    # - x x
+    # - - -
+    value = int(value_matrix[-1][0]) # centre
+    value += value_matrix[-2][0] # up
+    value += value_matrix[-1][1] # right
+    value += value_matrix[-2][1] # up-right
+    value /= 4
+    row.append(value)
+    # Handle final row
+    # x x x
+    # x x x
+    # - - -
+    for x in range(1, len(value_matrix[0])-1): # skip the first and stop before the last, hence -1
+            value = int(value_matrix[-1][x]) # centre
+            value += value_matrix[-1][x-1] # left
+            value += value_matrix[-2][x] # up
+            value += value_matrix[-1][x+1] # right
+            value += value_matrix[-2][x-1] # up-left
+            value += value_matrix[-2][x+1] # up-right
+            value /= 6
+            row.append(value)
+
+    # Handle bottom-right corner
+    # x x -
+    # x x -
+    # - - -
+
+    value = int(value_matrix[-1][-1]) # centre
+    value += value_matrix[-2][-1] # up
+    value += value_matrix[-1][-2] # left
+    value += value_matrix[-2][-2] # up-left
+    value /= 4
+    row.append(value)
+
+    blur.append(row)
+    # Recursion
     if repetitions <= 1:
         return blur
     else:
@@ -177,38 +185,11 @@ def box_blur(value_matrix: list, repetitions: int = 1, total: int = 1) -> list: 
 
 
 
-def gaussian_blur(value_matrix: list) -> list:
+def gaussian_blur(value_matrix: list) -> list: # TODO
     """Applies a gaussian blur."""
     result = []
     return result
 
-
-
-def glowblur(value_matrix: list, brightness_multiplier: float = 1.0):
-    """Iterates over every pixel and evaluates the brightness based on distance to sources."""
-    brightness_multiplier = 1/brightness_multiplier
-    # find sources
-    sources = []
-    for y in range(len(value_matrix)):
-
-        for x in range(len(value_matrix[y])):
-
-            if value_matrix[y][x] == 0xFF:
-                sources.append([x,y])
-
-    for y in range(len(value_matrix)):
-
-        for x in range(len(value_matrix[y])):
-            if value_matrix != 0xFF: # prevent value exceeding 255
-                for source in sources:
-                    dy = y - source[1]
-                    dx = x - source[0]
-                    distance = (dy**2 + dx**2)**0.5 + 1 # c = sqrt(a^2 + b^2), +1 to avoid div by 0
-
-                    value_matrix[y][x] += int(255.0/((distance**2)*brightness_multiplier))
-                    value_matrix[y][x] = min(value_matrix[y][x], 0xFF) # clamping
-
-    return value_matrix
 
 
 
