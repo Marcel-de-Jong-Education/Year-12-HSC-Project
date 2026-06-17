@@ -438,7 +438,7 @@ def main() -> int:
             inquirer.List(
                 "Login or Genesis New User",
                 choices=[
-                    "New User",
+                    "New User"
                 ],
             )
         ]
