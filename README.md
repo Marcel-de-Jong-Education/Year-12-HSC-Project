@@ -7,7 +7,7 @@ White Noise is a type of noise where the image consists of random, chaotic greys
 ### Blobby Noise
 Blobby Noise is an algorithm of my own devising which produces randomly distributed blobs of noise. 
 The algorithm works by:
-1. Randomly selecting a handful of points and setting them to be white (`rgb(9, 105, 218)`)
+1. Randomly selecting a handful of points and setting them to be white (`rgb(255, 255, 255)`)
 2. Expanding the white points into parallelogrammes several pixels across.
 3. Repeatedly applying a 3x3 [box-blur](https://w.wiki/Hpci).
 
