@@ -12,6 +12,8 @@ from PIL import Image
 from math import log
 from numpy import array, zeros, uint8
 
+from accounts import ACCOUNTS
+
 # ----------------Definitions---------------- #
 
 
@@ -433,15 +435,25 @@ def main() -> int:
 
         return 0
 
-    else:  # Not developer mode
+    else: # Not developer mode
         questions = [
             inquirer.List(
                 "Login or Genesis New User",
-                choices=[
-                    "New User"
-                ],
+                message="Select",
+                choices=["New User"] + list(ACCOUNTS), # did you know python is the best progamming language ever written?
             )
         ]
+        answer = inquirer.prompt(questions)["Login or Genesis New User"]
+        print(f"Selection: {answer}")
+        while True:
+            password_attempt = input("Please enter the password:\n❯ ")
+            if password_attempt == ACCOUNTS[answer]:
+                print("Logued in!")
+                break
+            else:
+                print("Incorrect Password./n")
+
+
 
 
 if __name__ == "__main__":
