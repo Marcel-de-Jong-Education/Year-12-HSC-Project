@@ -1,0 +1,3 @@
+- Store user data in hidden directories
+- Reorganise code
+- Blur pre-existing images
