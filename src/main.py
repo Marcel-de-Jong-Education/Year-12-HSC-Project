@@ -11,14 +11,16 @@ from time import time
 from PIL import Image
 from math import log
 from numpy import array, zeros, uint8
+from pathlib import Path
 
 from accounts import ACCOUNTS
 from blurLib import box_blur
 
 # ----------------Definitions---------------- #
 
+script_dir = Path(__file__).resolve().parent
 
-class Noise(StrEnum):  # Not a typical python class, enums are special
+class Noise(StrEnum):  # Not a typical python class; enums are special
     """Enumerates noise types to ensure type-safety."""
 
     WHITE = "WHITE"
@@ -231,6 +233,43 @@ def interactive_selection() -> Noise:
             )  # This line *should* never run
 
 
+def find_user_data(user: str) -> list:
+    """Returns a list of all the files a user has."""
+    global script_dir
+
+    # Point to the user_data folder
+    user_data_dir = script_dir / "user_data"
+
+    # List of target folders you want to check
+    target_dirs = list(ACCOUNTS)
+
+    # Ensure all user account directories exist
+    for directory in target_dirs:
+        # Combine paths: script_dir / user_data / target_folder
+        dir_path = user_data_dir / directory
+
+        if dir_path.is_dir():
+            print(f"Detected user data directory for {directory}!")
+        else:
+            print(f"Missing: {directory} does not exist")
+            print(f"Creating directory {directory}...")
+            # parents=True also creates parent dir if missing
+            # exist_ok=True prevents error in case of live tampering
+            dir_path.mkdir(parents=True, exist_ok=True)
+            print("Done!")
+
+    user_path = user_data_dir / user
+    # User data is just images
+    # Safely return that specific user's files
+    if user_path.is_dir():
+        return [
+            item.name for item in user_path.iterdir() if item.is_file()
+        ]
+
+    return []  # Return empty list if the requested user doesn't exist
+
+
+
 # ----------------Script---------------- #
 
 
@@ -285,13 +324,75 @@ def main() -> int:
         ]
         answer = inquirer.prompt(questions)["Login or Genesis New User"]
         print(f"Selection: {answer}")
-        while True:
-            password_attempt = input("Please enter the password:\n❯ ")
-            if password_attempt == ACCOUNTS[answer]:
-                print("Logued in!")
-                break
+        if answer != "New User":
+            while True:
+                password_attempt = input("Please enter the password:\n❯ ")
+                if password_attempt == ACCOUNTS[answer]:
+                    print("Logued in!")
+                    break
+                else:
+                    print("Incorrect Password./n")
+        else:
+            new_username = input("Create a username:\n❯ ")
+            new_password = input("Create a password:\n❯ ")
+            # TODO
+
+        user = answer
+        # check if user has images saved
+        print(find_user_data(user))
+        # check if user wants to create a new image, or work with an existing image
+        questions = [
+            inquirer.List(
+                "Action",
+                message="Select",
+                choices=["Create New Image.", "Existing Image."],
+            )
+        ]
+        answer = inquirer.prompt(questions)["Action"]
+        print(f"Selection: {answer}")
+
+        if answer == "Create New Image.":
+            try:
+            noise_selection = interactive_selection()
+        except ValueError:
+            return 1
+
+        start = time()
+        noise_map = generate_noise(
+            width=0xFF,
+            height=0xFF,
+            noise_type=noise_selection,
+            density_percent=0.8,
+            spread_distance=3,
+        )
+        end = time()
+        print(f"Time to generate noise: {end - start}\n")
+
+        if noise_selection == Noise.BLOBBY:
+            # noise_map = noise_octaves(noise_map, [32.0, 1.2])
+
+            if "y" in input("Colourise to terrain? [y/N]\n").lower():
+                terrain = noise_to_terrain(
+                    noise_matrix=noise_map, sea_level=24
+                )  # 0 <= sea_level <= 255
+
+                img = Image.fromarray(terrain, mode="RGB")
             else:
-                print("Incorrect Password./n")
+                noise_map = array(noise_map, dtype=uint8)
+                img = Image.fromarray(noise_map)
+
+            img.show()
+            return 0
+
+        noise_map = array(noise_map, dtype=uint8)
+        img = Image.fromarray(noise_map)
+        img.show()
+
+        return 0
+
+
+
+
 
     #
 
