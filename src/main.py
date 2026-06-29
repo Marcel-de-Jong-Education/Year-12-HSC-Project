@@ -119,42 +119,6 @@ def generate_noise(
             return matrix
 
 
-def noise_octaves(
-    noise: list, octaves: list[float] = [8.0], strength: list[float] = [1.0]
-) -> list:  # TODO: fix
-    """Adds octaves to noise."""
-
-    # octaves should be number loosely based on what grid size they would standalone suit
-    # e.g. 256x256 => [d=0.8, s=3], octave = log_2(256) = 8
-    # therefore d(ensity) = octave / 10
-    # s(pread) = log_2(octave)
-    for octave in octaves:
-        density = 1 / octave / 10
-        print(f"d = {density}")
-        spread = int(log(octave, 2))
-        print(f"s = {spread}")
-
-        noise = array(noise, dtype=uint8)
-        img = Image.fromarray(noise)
-        img.show()
-
-        noise = (
-            noise
-            + array(
-                generate_noise(  # numpy wraps when values exceed 255 so need to handle that at some point
-                    width=len(noise[0]),  # width
-                    height=len(noise),  # height
-                    noise_type=Noise.BLOBBY,
-                    density_percent=density,
-                    spread_distance=spread,
-                ),
-                dtype=uint8,
-            )
-        )
-
-    return noise
-
-
 def noise_to_text(value_matrix: list) -> str:
     """Converts a 2D matrix of integers into a text map with intensity-reflective colouring."""
     gradient_characters = ["██", "▓▓", "▒▒", "░░", "  "]
@@ -293,7 +257,6 @@ def main() -> int:
         print(f"Time to generate noise: {end - start}\n")
 
         if noise_selection == Noise.BLOBBY:
-            # noise_map = noise_octaves(noise_map, [32.0, 1.2])
 
             if "y" in input("Colourise to terrain? [y/N]\n").lower():
                 terrain = noise_to_terrain(
@@ -353,43 +316,58 @@ def main() -> int:
 
         if answer == "Create New Image.":
             try:
-            noise_selection = interactive_selection()
-        except ValueError:
-            return 1
+                noise_selection = interactive_selection()
+            except ValueError:
+                return 1
 
-        start = time()
-        noise_map = generate_noise(
-            width=0xFF,
-            height=0xFF,
-            noise_type=noise_selection,
-            density_percent=0.8,
-            spread_distance=3,
-        )
-        end = time()
-        print(f"Time to generate noise: {end - start}\n")
+            start = time()
+            noise_map = generate_noise(
+                width=0xFF,
+                height=0xFF,
+                noise_type=noise_selection,
+                density_percent=0.8,
+                spread_distance=3,
+            )
+            end = time()
 
-        if noise_selection == Noise.BLOBBY:
-            # noise_map = noise_octaves(noise_map, [32.0, 1.2])
+            print(f"Time to generate noise: {end - start}\n")
 
-            if "y" in input("Colourise to terrain? [y/N]\n").lower():
-                terrain = noise_to_terrain(
-                    noise_matrix=noise_map, sea_level=24
-                )  # 0 <= sea_level <= 255
+            if noise_selection == Noise.BLOBBY:
 
-                img = Image.fromarray(terrain, mode="RGB")
-            else:
-                noise_map = array(noise_map, dtype=uint8)
-                img = Image.fromarray(noise_map)
+                if "y" in input("Colourise to terrain? [y/N]\n").lower():
+                    terrain = noise_to_terrain(
+                        noise_matrix=noise_map, sea_level=24
+                    )  # 0 <= sea_level <= 255
 
+                    img = Image.fromarray(terrain, mode="RGB")
+                else:
+                    noise_map = array(noise_map, dtype=uint8)
+                    img = Image.fromarray(noise_map)
+
+                img.show()
+                return 0
+
+            noise_map = array(noise_map, dtype=uint8)
+            img = Image.fromarray(noise_map)
             img.show()
+
+            # Check if user wants to save image
+            questions = [
+                inquirer.List(
+                    "Save?",
+                    message="Select",
+                    choices=["Save image.", "Quit."],
+                )
+            ]
+            answer = inquirer.prompt(questions)["Save?"]
+
+            if answer == "Quit.":
+                return 0
+            elif answer == "Save image.":
+                # save the image
+
+
             return 0
-
-        noise_map = array(noise_map, dtype=uint8)
-        img = Image.fromarray(noise_map)
-        img.show()
-
-        return 0
-
 
 
 
