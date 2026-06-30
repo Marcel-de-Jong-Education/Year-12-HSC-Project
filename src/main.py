@@ -226,7 +226,60 @@ def find_user_data(user: str) -> list:
 
 def main() -> int:
     """Runs the script."""
-    if "y" in input("Developer mode?\n").lower():
+    # Initialise user variable in high scope
+    user = None
+
+    questions = [
+        inquirer.List(
+            "Login or Genesis New User",
+            message="Select",
+            choices=["New User"]
+            + list(
+                ACCOUNTS
+            ),  # did you know python is the best progamming language ever written?
+        )
+    ]
+    answer = inquirer.prompt(questions)["Login or Genesis New User"]
+    print(f"Selection: {answer}")
+    if answer != "New User":
+        while True:
+            password_attempt = input("Please enter the password:\n❯ ")
+            if password_attempt == ACCOUNTS[answer]:
+                user = answer
+                print("Logued in!")
+                break
+            else:
+                print("Incorrect password.\n")
+    else:
+        while True:
+            new_username = input("Create a username:\n❯ ")
+            if new_username.isalnum():
+                break
+            print("Alphanumeric names only.")
+        while True:
+            new_password = input("Create a password:\n❯ ")
+            if new_password.isalnum():
+                break
+            print("Alphanumeric passwords only.")
+        ACCOUNTS[new_username] = new_password
+        save_accounts()
+        # set correct user for session
+        user = new_username
+
+    # check if user has images saved
+    print(find_user_data(user))
+    # check if user wants to create a new image, or work with an existing image
+    questions = [
+        inquirer.List(
+            "Action",
+            message="Select",
+            choices=["Create New Image.", "Existing Image."],
+        )
+    ]
+    answer0 = inquirer.prompt(questions)["Action"]
+    print(f"Selection: {answer0}")
+
+    if answer0 == "Create New Image.":
         try:
             noise_selection = interactive_selection()
         except ValueError:
@@ -241,8 +294,11 @@ def main() -> int:
             spread_distance=3,
         )
         end = time()
+
         print(f"Time to generate noise: {end - start}\n")
 
+        # define img in wider scope
+        img = None
         if noise_selection == Noise.BLOBBY:
             if "y" in input("Colourise to terrain? [y/N]\n").lower():
                 terrain = noise_to_terrain(
@@ -254,164 +310,70 @@ def main() -> int:
                 noise_map = array(noise_map, dtype=uint8)
                 img = Image.fromarray(noise_map)
 
-            img.show()
-            return 0
+        elif noise_selection == Noise.WHITE:
+            noise_map = array(noise_map, dtype=uint8)
+            img = Image.fromarray(noise_map)
 
-        noise_map = array(noise_map, dtype=uint8)
-        img = Image.fromarray(noise_map)
+        else:
+            raise ValueError
+
         img.show()
 
-        return 0
-
-    else:  # Not developer mode
-        # Initialise user variable in high scope
-        user = None
-
+        # Check if user wants to save image
         questions = [
             inquirer.List(
-                "Login or Genesis New User",
+                "Save?",
                 message="Select",
-                choices=["New User"]
-                + list(
-                    ACCOUNTS
-                ),  # did you know python is the best progamming language ever written?
+                choices=["Save image.", "Quit."],
             )
         ]
-        answer = inquirer.prompt(questions)["Login or Genesis New User"]
-        print(f"Selection: {answer}")
-        if answer != "New User":
+        answer1 = inquirer.prompt(questions)["Save?"]
+
+        if answer1 == "Quit.":
+            return 0
+        elif answer1 == "Save image.":
+            # save the image
             while True:
-                password_attempt = input("Please enter the password:\n❯ ")
-                if password_attempt == ACCOUNTS[answer]:
-                    user = answer
-                    print("Logued in!")
-                    break
-                else:
-                    print("Incorrect password.\n")
-        else:
-            while True:
-                new_username = input("Create a username:\n❯ ")
-                if new_username.isalnum():
+                filename = input("Enter file name:\n❯ ") + ".png"
+                if filename.isalnum():
                     break
                 print("Alphanumeric names only.")
-            while True:
-                new_password = input("Create a password:\n❯ ")
-                if new_password.isalnum():
-                    break
-                print("Alphanumeric passwords only.")
-            ACCOUNTS[new_username] = new_password
-            save_accounts()
-            # set correct user for session
-            user = new_username
 
-        # check if user has images saved
-        print(find_user_data(user))
-        # check if user wants to create a new image, or work with an existing image
-        questions = [
-            inquirer.List(
-                "Action",
-                message="Select",
-                choices=["Create New Image.", "Existing Image."],
-            )
-        ]
-        answer0 = inquirer.prompt(questions)["Action"]
-        print(f"Selection: {answer0}")
-
-        if answer0 == "Create New Image.":
+            save_dir = Path("user_data/" + user)
             try:
-                noise_selection = interactive_selection()
-            except ValueError:
-                return 1
+                img.save(save_dir / filename)
+            except OSError:
+                print(f"Failed to save {filename}.")
 
-            start = time()
-            noise_map = generate_noise(
-                width=0xFF,
-                height=0xFF,
-                noise_type=noise_selection,
-                density_percent=0.8,
-                spread_distance=3,
-            )
-            end = time()
-
-            print(f"Time to generate noise: {end - start}\n")
-
-            # define img in wider scope
-            img = None
-            if noise_selection == Noise.BLOBBY:
-                if "y" in input("Colourise to terrain? [y/N]\n").lower():
-                    terrain = noise_to_terrain(
-                        noise_matrix=noise_map, sea_level=24
-                    )  # 0 <= sea_level <= 255
-
-                    img = Image.fromarray(terrain, mode="RGB")
-                else:
-                    noise_map = array(noise_map, dtype=uint8)
-                    img = Image.fromarray(noise_map)
-
-            elif noise_selection == Noise.WHITE:
-                noise_map = array(noise_map, dtype=uint8)
-                img = Image.fromarray(noise_map)
-
-            else:
-                raise ValueError
-
-            img.show()
-
-            # Check if user wants to save image
-            questions = [
-                inquirer.List(
-                    "Save?",
-                    message="Select",
-                    choices=["Save image.", "Quit."],
-                )
-            ]
-            answer1 = inquirer.prompt(questions)["Save?"]
-
-            if answer1 == "Quit.":
-                return 0
-            elif answer1 == "Save image.":
-                # save the image
-                while True:
-                    filename = input("Enter file name:\n❯ ") + ".png"
-                    if filename.isalnum():
-                        break
-                    print("Alphanumeric names only.")
-
-                save_dir = Path("user_data/" + user)
-                try:
-                    img.save(save_dir / filename)
-                except OSError:
-                    print(f"Failed to save {filename}.")
-
-                print(f"Saved {filename} to {save_dir} successfully!")
-            else:
-                # malformed input
-                raise ValueError
-
-        elif answer0 == "Existing Image.":
-            # make an inquirer selection where each option is a file in the user's dir
-            user_files = find_user_data(user)
-            # check user has files
-            if len(user_files) < 1:
-                print("Error 404: File not found.")
-                return 0
-
-            questions = [
-                inquirer.List(
-                    "userfiles",
-                    message="Select a file.",
-                    choices=user_files,
-                )
-            ]
-            answer2 = inquirer.prompt(questions)["userfiles"]
-            image_path = script_dir / "user_data" / user / answer2
-            img = Image.open(image_path)
-            img.show()
-
+            print(f"Saved {filename} to {save_dir} successfully!")
         else:
             # malformed input
             raise ValueError
+
+    elif answer0 == "Existing Image.":
+        # make an inquirer selection where each option is a file in the user's dir
+        user_files = find_user_data(user)
+        # check user has files
+        if len(user_files) < 1:
+            print("Error 404: File not found.")
             return 0
+
+        questions = [
+            inquirer.List(
+                "userfiles",
+                message="Select a file.",
+                choices=user_files,
+            )
+        ]
+        answer2 = inquirer.prompt(questions)["userfiles"]
+        image_path = script_dir / "user_data" / user / answer2
+        img = Image.open(image_path)
+        img.show()
+
+    else:
+        # malformed input
+        raise ValueError
+        return 0
 
     #
 
