@@ -1,11 +1,14 @@
-"""CLI tool for generating noise"""
+"""CLI tool for generating noise textures"""
 
 # ----------------Dependencies---------------- #
 
+# System modules
 import sys
 from random import randint
 from enum import StrEnum
+import json
 
+# Third-party modules
 import inquirer
 from time import time
 from PIL import Image
@@ -13,24 +16,26 @@ from math import log
 from numpy import array, zeros, uint8
 from pathlib import Path
 
-from accounts import ACCOUNTS
+# Modules by this project
 from blurLib import box_blur
 
 # ----------------Definitions---------------- #
 
+# Identify the working directory
 script_dir = Path(__file__).resolve().parent
+# Determine the path to account data
+accounts_file = script_dir / "accounts.json"
+try:
+    with open(accounts_file, "r") as f:
+        ACCOUNTS = json.load(f)
+except FileNotFoundError:
+    ACCOUNTS = {}
+
 
 class Noise(StrEnum):  # Not a typical python class; enums are special
     """Enumerates noise types to ensure type-safety."""
-
     WHITE = "WHITE"
     BLOBBY = "BLOBBY"
-
-
-def gaussian_blur(value_matrix: list) -> list:  # TODO
-    """Applies a gaussian blur."""
-    result = []
-    return result
 
 
 def generate_noise(
@@ -101,13 +106,15 @@ def generate_noise(
                         pass
 
             # blur (log_2(256^2)-2)^2 times
+            # CODE REVIEWERS: If you have a LaTeX renderer on hand, paste the following into it:
+            # \displaystyle\left[log_2\left(256^2\right)-2\right]^2
+            # This formula automagically optimises the blur count for the desired resolution!
             blur_count = int((log(width * height, 2) - 2) ** 2)
             matrix = box_blur(
                 value_matrix=matrix, repetitions=blur_count, total=blur_count
             )  # ~1 second per 20 repetitions at 256x256
 
             return matrix
-
 
         case _:  # This should REALLY never run.
             print(f"Invalid type {noise_type}!")
@@ -220,12 +227,9 @@ def find_user_data(user: str) -> list:
     # User data is just images
     # Safely return that specific user's files
     if user_path.is_dir():
-        return [
-            item.name for item in user_path.iterdir() if item.is_file()
-        ]
+        return [item.name for item in user_path.iterdir() if item.is_file()]
 
     return []  # Return empty list if the requested user doesn't exist
-
 
 
 # ----------------Script---------------- #
@@ -251,7 +255,6 @@ def main() -> int:
         print(f"Time to generate noise: {end - start}\n")
 
         if noise_selection == Noise.BLOBBY:
-
             if "y" in input("Colourise to terrain? [y/N]\n").lower():
                 terrain = noise_to_terrain(
                     noise_matrix=noise_map, sea_level=24
@@ -271,12 +274,15 @@ def main() -> int:
 
         return 0
 
-    else: # Not developer mode
+    else:  # Not developer mode
         questions = [
             inquirer.List(
                 "Login or Genesis New User",
                 message="Select",
-                choices=["New User"] + list(ACCOUNTS), # did you know python is the best progamming language ever written?
+                choices=["New User"]
+                + list(
+                    ACCOUNTS
+                ),  # did you know python is the best progamming language ever written?
             )
         ]
         answer = inquirer.prompt(questions)["Login or Genesis New User"]
@@ -292,7 +298,7 @@ def main() -> int:
         else:
             new_username = input("Create a username:\n❯ ")
             new_password = input("Create a password:\n❯ ")
-            # TODO add to accounts.py
+            ACCOUNTS[new_username] = new_password
 
         user = answer
         # check if user has images saved
@@ -327,7 +333,6 @@ def main() -> int:
             print(f"Time to generate noise: {end - start}\n")
 
             if noise_selection == Noise.BLOBBY:
-
                 if "y" in input("Colourise to terrain? [y/N]\n").lower():
                     terrain = noise_to_terrain(
                         noise_matrix=noise_map, sea_level=24
@@ -359,7 +364,9 @@ def main() -> int:
                 return 0
             elif answer == "Save image.":
                 # save the image
-                filename = input("Enter file name:\n❯ ") + ".png" # TODO: check if alphanumeric
+                filename = (
+                    input("Enter file name:\n❯ ") + ".png"
+                )  # TODO: check if alphanumeric
                 save_dir = Path("user_data/" + user)
                 try:
                     img.save(save_dir / filename)
@@ -373,12 +380,7 @@ def main() -> int:
 
             return 0
 
-
-
-
     #
-
-
 
 
 if __name__ == "__main__":
