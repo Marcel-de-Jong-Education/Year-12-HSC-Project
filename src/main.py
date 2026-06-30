@@ -28,9 +28,13 @@ accounts_file = script_dir / "accounts.json"
 try:
     with accounts_file.open("r") as f:
         ACCOUNTS = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError): # in case the file is missing or malformed
+except (
+    FileNotFoundError,
+    json.JSONDecodeError,
+):  # in case the file is missing or malformed
     print("Account data missing or corrupted!")
     ACCOUNTS = {}
+
 
 def save_accounts() -> None:
     """Saves user data to accounts.json."""
@@ -40,6 +44,7 @@ def save_accounts() -> None:
 
 class Noise(StrEnum):  # Not a typical python class; enums are special
     """Enumerates noise types to ensure type-safety."""
+
     WHITE = "WHITE"
     BLOBBY = "BLOBBY"
 
@@ -128,29 +133,6 @@ def generate_noise(
             return matrix
 
 
-def noise_to_text(value_matrix: list) -> str:
-    """Converts a 2D matrix of integers into a text map with intensity-reflective colouring."""
-    gradient_characters = ["██", "▓▓", "▒▒", "░░", "  "]
-    output = "\n"
-
-    for y in range(len(value_matrix)):
-        for x in range(len(value_matrix[y])):
-            if value_matrix[y][x] > 205:
-                output += gradient_characters[0]
-            elif value_matrix[y][x] > 155:
-                output += gradient_characters[1]
-            elif value_matrix[y][x] > 105:
-                output += gradient_characters[2]
-            elif value_matrix[y][x] > 55:
-                output += gradient_characters[3]
-            else:
-                output += gradient_characters[4]
-
-        output += "\n"
-
-    return output
-
-
 def noise_to_terrain(
     noise_matrix: list, sea_level: int = 196
 ):  # this made me hate myself so much why is documentation so painful to readddddd
@@ -219,7 +201,7 @@ def find_user_data(user: str) -> list:
         dir_path = user_data_dir / directory
 
         if dir_path.is_dir():
-            #print(f"Detected user data directory for {directory}!")
+            # print(f"Detected user data directory for {directory}!")
             pass
         else:
             print(f"Missing: {directory} does not exist")
@@ -390,9 +372,7 @@ def main() -> int:
             elif answer1 == "Save image.":
                 # save the image
                 while True:
-                    filename = (
-                        input("Enter file name:\n❯ ") + ".png"
-                    )
+                    filename = input("Enter file name:\n❯ ") + ".png"
                     if filename.isalnum():
                         break
                     print("Alphanumeric names only.")
@@ -438,6 +418,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-# Settings: Blobby, 256x256
-# benchmark: 9201 ms
