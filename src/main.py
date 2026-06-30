@@ -26,10 +26,16 @@ script_dir = Path(__file__).resolve().parent
 # Determine the path to account data
 accounts_file = script_dir / "accounts.json"
 try:
-    with open(accounts_file, "r") as f:
+    with accounts_file.open("r") as f:
         ACCOUNTS = json.load(f)
-except FileNotFoundError:
+except (FileNotFoundError, json.JSONDecodeError): # in case the file is missing or malformed
+    print("Account data missing or corrupted!")
     ACCOUNTS = {}
+
+def save_accounts() -> None:
+    """Saves user data to accounts.json."""
+    with open(accounts_file, "w") as f:
+        json.dump(ACCOUNTS, f, indent=4)
 
 
 class Noise(StrEnum):  # Not a typical python class; enums are special
@@ -275,6 +281,9 @@ def main() -> int:
         return 0
 
     else:  # Not developer mode
+        # Initialise user variable in high scope
+        user = None
+
         questions = [
             inquirer.List(
                 "Login or Genesis New User",
@@ -291,16 +300,19 @@ def main() -> int:
             while True:
                 password_attempt = input("Please enter the password:\n❯ ")
                 if password_attempt == ACCOUNTS[answer]:
+                    user = answer
                     print("Logued in!")
                     break
                 else:
-                    print("Incorrect Password./n")
+                    print("Incorrect password.\n")
         else:
             new_username = input("Create a username:\n❯ ")
             new_password = input("Create a password:\n❯ ")
             ACCOUNTS[new_username] = new_password
+            save_accounts()
+            # set correct user for session
+            user = new_username
 
-        user = answer
         # check if user has images saved
         print(find_user_data(user))
         # check if user wants to create a new image, or work with an existing image
@@ -311,10 +323,10 @@ def main() -> int:
                 choices=["Create New Image.", "Existing Image."],
             )
         ]
-        answer = inquirer.prompt(questions)["Action"]
-        print(f"Selection: {answer}")
+        answer0 = inquirer.prompt(questions)["Action"]
+        print(f"Selection: {answer0}")
 
-        if answer == "Create New Image.":
+        if answer0 == "Create New Image.":
             try:
                 noise_selection = interactive_selection()
             except ValueError:
@@ -358,11 +370,11 @@ def main() -> int:
                     choices=["Save image.", "Quit."],
                 )
             ]
-            answer = inquirer.prompt(questions)["Save?"]
+            answer1 = inquirer.prompt(questions)["Save?"]
 
-            if answer == "Quit.":
+            if answer1 == "Quit.":
                 return 0
-            elif answer == "Save image.":
+            elif answer1 == "Save image.":
                 # save the image
                 filename = (
                     input("Enter file name:\n❯ ") + ".png"
