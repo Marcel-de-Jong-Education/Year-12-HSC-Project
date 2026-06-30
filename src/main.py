@@ -219,7 +219,8 @@ def find_user_data(user: str) -> list:
         dir_path = user_data_dir / directory
 
         if dir_path.is_dir():
-            print(f"Detected user data directory for {directory}!")
+            #print(f"Detected user data directory for {directory}!")
+            pass
         else:
             print(f"Missing: {directory} does not exist")
             print(f"Creating directory {directory}...")
@@ -227,7 +228,7 @@ def find_user_data(user: str) -> list:
             # parents=True also creates parent dir if missing
             # exist_ok=True prevents error in case of live tampering
             dir_path.mkdir(parents=True, exist_ok=True)
-            print("Done!")
+            print("Directory created!")
 
     user_path = user_data_dir / user
     # User data is just images
@@ -306,6 +307,7 @@ def main() -> int:
                 else:
                     print("Incorrect password.\n")
         else:
+            # TODO check input/sanitise input
             new_username = input("Create a username:\n❯ ")
             new_password = input("Create a password:\n❯ ")
             ACCOUNTS[new_username] = new_password
@@ -390,6 +392,29 @@ def main() -> int:
                 # malformed input
                 raise ValueError
 
+        elif answer0 == "Existing Image.":
+            # make an inquirer selection where each option is a file in the user's dir
+            user_files = find_user_data(user)
+            # check user has files
+            if len(user_files) < 1:
+                print("Error 404: File not found.")
+                return 0
+
+            questions = [
+                inquirer.List(
+                    "userfiles",
+                    message="Select a file.",
+                    choices=user_files,
+                )
+            ]
+            answer2 = inquirer.prompt(questions)["userfiles"]
+            image_path = script_dir / "user_data" / user / answer2
+            img = Image.open(image_path)
+            img.show()
+
+        else:
+            # malformed input
+            raise ValueError
             return 0
 
     #
