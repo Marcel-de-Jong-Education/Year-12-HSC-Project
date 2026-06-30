@@ -1,7 +1,7 @@
 # Year 12 HSC Project - CLI Visual Noise Generator
 ## Description
 This is an interactive CLI (Command Line Interface) tool for generating [visual noise](https://w.wiki/HpbU). 
-It can generate 3 types of noise:
+It can generate 2 types of noise:
 ### White Noise
 White Noise is a type of noise where the image consists of random, chaotic greyscale values from white to black.
 ### Blobby Noise
@@ -12,8 +12,6 @@ The algorithm works by:
 3. Repeatedly applying a 3x3 [box-blur](https://w.wiki/Hpci).
 
 It is very conceptually simple, but produces decent results.
-### Perlin Noise
-Not implemented yet.
 ## Usage
 From your terminal or terminal-emulator, enter the src directory.
 ```bash
