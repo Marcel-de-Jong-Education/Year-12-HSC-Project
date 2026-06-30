@@ -10,7 +10,7 @@ import json
 
 # Third-party modules
 import inquirer
-from time import time
+from time import time, sleep
 from PIL import Image
 from math import log
 from numpy import array, zeros, uint8
@@ -250,6 +250,7 @@ def main() -> int:
                 break
             else:
                 print("Incorrect password.\n")
+                sleep(2)
     else:
         while True:
             new_username = input("Create a username:\n❯ ")
@@ -334,8 +335,9 @@ def main() -> int:
         elif answer1 == "Save image.":
             # save the image
             while True:
-                filename = input("Enter file name:\n❯ ") + ".png"
+                filename = input("Enter file name:\n❯ ")
                 if filename.isalnum():
+                    filename += ".png"
                     break
                 print("Alphanumeric names only.")
 
