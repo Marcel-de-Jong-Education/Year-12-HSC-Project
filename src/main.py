@@ -307,9 +307,16 @@ def main() -> int:
                 else:
                     print("Incorrect password.\n")
         else:
-            # TODO check input/sanitise input
-            new_username = input("Create a username:\n❯ ")
-            new_password = input("Create a password:\n❯ ")
+            while True:
+                new_username = input("Create a username:\n❯ ")
+                if new_username.isalnum():
+                    break
+                print("Alphanumeric names only.")
+            while True:
+                new_password = input("Create a password:\n❯ ")
+                if new_password.isalnum():
+                    break
+                print("Alphanumeric passwords only.")
             ACCOUNTS[new_username] = new_password
             save_accounts()
             # set correct user for session
@@ -346,6 +353,8 @@ def main() -> int:
 
             print(f"Time to generate noise: {end - start}\n")
 
+            # define img in wider scope
+            img = None
             if noise_selection == Noise.BLOBBY:
                 if "y" in input("Colourise to terrain? [y/N]\n").lower():
                     terrain = noise_to_terrain(
@@ -357,11 +366,13 @@ def main() -> int:
                     noise_map = array(noise_map, dtype=uint8)
                     img = Image.fromarray(noise_map)
 
-                img.show()
-                return 0
+            elif noise_selection == Noise.WHITE:
+                noise_map = array(noise_map, dtype=uint8)
+                img = Image.fromarray(noise_map)
 
-            noise_map = array(noise_map, dtype=uint8)
-            img = Image.fromarray(noise_map)
+            else:
+                raise ValueError
+
             img.show()
 
             # Check if user wants to save image
@@ -378,9 +389,14 @@ def main() -> int:
                 return 0
             elif answer1 == "Save image.":
                 # save the image
-                filename = (
-                    input("Enter file name:\n❯ ") + ".png"
-                )  # TODO: check if alphanumeric
+                while True:
+                    filename = (
+                        input("Enter file name:\n❯ ") + ".png"
+                    )
+                    if filename.isalnum():
+                        break
+                    print("Alphanumeric names only.")
+
                 save_dir = Path("user_data/" + user)
                 try:
                     img.save(save_dir / filename)
