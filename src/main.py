@@ -25,7 +25,6 @@ class Noise(StrEnum):  # Not a typical python class; enums are special
 
     WHITE = "WHITE"
     BLOBBY = "BLOBBY"
-    PERLIN = "PERLIN"
 
 
 def gaussian_blur(value_matrix: list) -> list:  # TODO
@@ -109,9 +108,6 @@ def generate_noise(
 
             return matrix
 
-        case Noise.PERLIN:
-            print("Perlin!")
-            return matrix
 
         case _:  # This should REALLY never run.
             print(f"Invalid type {noise_type}!")
@@ -176,7 +172,7 @@ def interactive_selection() -> Noise:
         inquirer.List(
             "Noise Type",
             message="Select a noise type",
-            choices=["White Noise", "Blobby Noise", "Perlin Noise"],
+            choices=["White Noise", "Blobby Noise"],
         )
     ]
     answer = inquirer.prompt(question)["Noise Type"]
@@ -187,9 +183,6 @@ def interactive_selection() -> Noise:
 
         case "Blobby Noise":
             return Noise.BLOBBY
-
-        case "Perlin Noise":
-            return Noise.PERLIN
 
         case _:
             raise ValueError(
@@ -217,6 +210,7 @@ def find_user_data(user: str) -> list:
         else:
             print(f"Missing: {directory} does not exist")
             print(f"Creating directory {directory}...")
+
             # parents=True also creates parent dir if missing
             # exist_ok=True prevents error in case of live tampering
             dir_path.mkdir(parents=True, exist_ok=True)
@@ -298,7 +292,7 @@ def main() -> int:
         else:
             new_username = input("Create a username:\n❯ ")
             new_password = input("Create a password:\n❯ ")
-            # TODO
+            # TODO add to accounts.py
 
         user = answer
         # check if user has images saved
@@ -365,7 +359,17 @@ def main() -> int:
                 return 0
             elif answer == "Save image.":
                 # save the image
+                filename = input("Enter file name:\n❯ ") + ".png" # TODO: check if alphanumeric
+                save_dir = Path("user_data/" + user)
+                try:
+                    img.save(save_dir / filename)
+                except OSError:
+                    print(f"Failed to save {filename}.")
 
+                print(f"Saved {filename} to {save_dir} successfully!")
+            else:
+                # malformed input
+                raise ValueError
 
             return 0
 
